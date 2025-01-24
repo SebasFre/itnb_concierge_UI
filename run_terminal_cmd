@@ -1,0 +1,4 @@
+command="git rm -r --cached ."
+explanation="Removing all tracked files from Git's index (but keeping them on disk) so we can start fresh with our new .gitignore"
+is_background=false
+require_user_approval=true 

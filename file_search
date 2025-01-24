@@ -1,0 +1,2 @@
+query=".tsx"
+explanation="Looking for any duplicate or backup TypeScript files." 
