@@ -33,21 +33,28 @@ export function Sidebar({ className, children }: React.HTMLAttributes<HTMLDivEle
   return (
     <aside
       className={cn(
-        "relative transition-all duration-300 ease-in-out",
+        "relative will-change-transform",
         expanded ? "w-64" : "w-16",
+        "transition-[width] duration-200 ease-out",
         className
       )}
     >
       <button
         onClick={() => setExpanded?.(!expanded)}
         className={cn(
-          "absolute -right-3 top-3 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-[#1d34cc] bg-[#02133A] text-[#75a6ff] transition-all duration-300 hover:bg-[#1e3fec]",
+          "absolute -right-3 top-3 z-50",
+          "flex h-6 w-6 items-center justify-center rounded-full",
+          "border border-[#1d34cc] bg-[#02133A] text-[#75a6ff]",
+          "hover:bg-[#1e3fec] transition-transform duration-200",
+          "will-change-transform shadow-sm",
           expanded && "rotate-180"
         )}
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
-      <div className="h-full overflow-hidden">{children}</div>
+      <div className="h-full overflow-hidden relative z-10">
+        {children}
+      </div>
     </aside>
   )
 }
@@ -91,15 +98,25 @@ export function SidebarMenuButton({
   return (
     <button
       className={cn(
-        "flex w-full items-center gap-3 rounded-md px-3 py-2 text-white transition-colors hover:bg-[#1e3fec]/10",
+        "flex w-full items-center gap-3 rounded-md transition-colors",
+        "px-3 py-2 text-white hover:bg-[#1e3fec]/10",
         isActive && "bg-[#1e3fec]/20 text-white",
         !expanded && "justify-center px-2",
+        "will-change-[width,padding]",
         className
       )}
       {...props}
     >
       {icon}
-      {expanded && <span className="text-base font-medium">{label}</span>}
+      <span 
+        className={cn(
+          "text-base font-medium transition-[width,opacity] duration-200 ease-out",
+          "will-change-[width,opacity]",
+          expanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
+        )}
+      >
+        {label}
+      </span>
     </button>
   )
 } 
