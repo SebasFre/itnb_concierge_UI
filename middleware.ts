@@ -7,8 +7,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  const isLoggedIn = request.cookies.get("isLoggedIn")?.value === "true" || 
-                     localStorage.getItem("isLoggedIn") === "true"
+  const isLoggedIn = request.cookies.get("isLoggedIn")?.value === "true"
 
   if (!isLoggedIn) {
     return NextResponse.redirect(new URL("/login", request.url))

@@ -4,8 +4,6 @@ import { useState } from "react"
 import { 
   Download, 
   Users, 
-  Upload, 
-  Clock, 
   MessageSquare,
   PieChart
 } from "lucide-react"
@@ -43,6 +41,7 @@ const responseTimeData = [
 
 export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('week')
+  const [showPieChart, setShowPieChart] = useState(true)
 
   const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
     // Implement export functionality
@@ -88,7 +87,7 @@ export function AnalyticsDashboard() {
         </div>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           <Card className="bg-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2 bg-white">
               <CardTitle className="text-sm font-medium text-gray-500">Total Users</CardTitle>
@@ -97,26 +96,6 @@ export function AnalyticsDashboard() {
             <CardContent className="bg-white">
               <div className="text-2xl font-bold text-gray-900">1,234</div>
               <p className="text-xs text-gray-500">+12% from last month</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 bg-white">
-              <CardTitle className="text-sm font-medium text-gray-500">Total Uploads</CardTitle>
-              <Upload className="h-4 w-4 text-[#1e3fec]" />
-            </CardHeader>
-            <CardContent className="bg-white">
-              <div className="text-2xl font-bold text-gray-900">5,678</div>
-              <p className="text-xs text-gray-500">+8% from last month</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-2 bg-white">
-              <CardTitle className="text-sm font-medium text-gray-500">Avg Response Time</CardTitle>
-              <Clock className="h-4 w-4 text-[#1e3fec]" />
-            </CardHeader>
-            <CardContent className="bg-white">
-              <div className="text-2xl font-bold text-gray-900">1.2s</div>
-              <p className="text-xs text-gray-500">-0.3s from last month</p>
             </CardContent>
           </Card>
           <Card className="bg-white">
@@ -135,70 +114,104 @@ export function AnalyticsDashboard() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card className="bg-white">
             <CardHeader className="bg-white">
-              <CardTitle className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-[#1e3fec]" />
-                Query Categories
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5 text-[#1e3fec]" />
+                  Query Categories
+                </CardTitle>
+                <button
+                  onClick={() => setShowPieChart(!showPieChart)}
+                  className="text-sm text-[#75a6ff] hover:text-[#1e3fec] transition-colors"
+                >
+                  {showPieChart ? 'Show List' : 'Show Chart'}
+                </button>
+              </div>
             </CardHeader>
             <CardContent className="bg-white">
-              <div className="flex items-start">
-                <div className="relative w-48 h-48">
-                  <svg viewBox="0 0 100 100" className="transform -rotate-90">
-                    {queryCategoryData.reduce((elements, item, index, array) => {
-                      const percentage = (item.value / totalQueries) * 100
-                      const previousPercentages = array
-                        .slice(0, index)
-                        .reduce((sum, prev) => sum + (prev.value / totalQueries) * 100, 0)
-                      
-                      // Calculate the SVG arc path
-                      const startAngle = (previousPercentages / 100) * Math.PI * 2
-                      const endAngle = ((previousPercentages + percentage) / 100) * Math.PI * 2
-                      
-                      const x1 = 50 + 40 * Math.cos(startAngle)
-                      const y1 = 50 + 40 * Math.sin(startAngle)
-                      const x2 = 50 + 40 * Math.cos(endAngle)
-                      const y2 = 50 + 40 * Math.sin(endAngle)
-                      
-                      const largeArcFlag = percentage > 50 ? 1 : 0
-                      
-                      const pathData = `
-                        M 50 50
-                        L ${x1} ${y1}
-                        A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2}
-                        Z
-                      `
-                      
-                      elements.push(
-                        <path
-                          key={item.category}
-                          d={pathData}
-                          fill={item.color}
-                          className="transition-all duration-300 hover:opacity-80"
+              {showPieChart ? (
+                <div className="flex items-start">
+                  <div className="relative w-48 h-48">
+                    <svg viewBox="0 0 100 100" className="transform -rotate-90">
+                      {queryCategoryData.reduce((elements, item, index, array) => {
+                        const percentage = (item.value / totalQueries) * 100
+                        const previousPercentages = array
+                          .slice(0, index)
+                          .reduce((sum, prev) => sum + (prev.value / totalQueries) * 100, 0)
+                        
+                        // Calculate the SVG arc path
+                        const startAngle = (previousPercentages / 100) * Math.PI * 2
+                        const endAngle = ((previousPercentages + percentage) / 100) * Math.PI * 2
+                        
+                        const x1 = 50 + 40 * Math.cos(startAngle)
+                        const y1 = 50 + 40 * Math.sin(startAngle)
+                        const x2 = 50 + 40 * Math.cos(endAngle)
+                        const y2 = 50 + 40 * Math.sin(endAngle)
+                        
+                        const largeArcFlag = percentage > 50 ? 1 : 0
+                        
+                        const pathData = `
+                          M 50 50
+                          L ${x1} ${y1}
+                          A 40 40 0 ${largeArcFlag} 1 ${x2} ${y2}
+                          Z
+                        `
+                        
+                        elements.push(
+                          <path
+                            key={item.category}
+                            d={pathData}
+                            fill={item.color}
+                            className="transition-all duration-300 hover:opacity-80"
+                          />
+                        )
+                        
+                        return elements
+                      }, [] as JSX.Element[])}
+                    </svg>
+                  </div>
+                  
+                  <div className="ml-6 flex-1 grid grid-cols-1 gap-3">
+                    {queryCategoryData.map((item) => (
+                      <div key={item.category} className="flex items-center gap-2">
+                        <div 
+                          className="h-3 w-3 rounded-full" 
+                          style={{ backgroundColor: item.color }}
                         />
-                      )
-                      
-                      return elements
-                    }, [] as JSX.Element[])}
-                  </svg>
-                </div>
-                
-                <div className="ml-6 flex-1 grid grid-cols-1 gap-3">
-                  {queryCategoryData.map((item) => (
-                    <div key={item.category} className="flex items-center gap-2">
-                      <div 
-                        className="h-3 w-3 rounded-full" 
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-sm text-gray-600">
-                        {item.category}
-                        <span className="ml-1 text-gray-400">
-                          ({Math.round((item.value / totalQueries) * 100)}%)
+                        <span className="text-sm text-gray-600">
+                          {item.category}
+                          <span className="ml-1 text-gray-400">
+                            ({Math.round((item.value / totalQueries) * 100)}%)
+                          </span>
                         </span>
-                      </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {queryCategoryData.map((item, index) => (
+                    <div key={item.category} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="h-3 w-3 rounded-full" 
+                          style={{ backgroundColor: item.color }}
+                        />
+                        <span className="text-sm font-medium text-gray-900">
+                          {item.category}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-sm text-gray-500">
+                          {item.value} queries
+                        </span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {Math.round((item.value / totalQueries) * 100)}%
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -219,33 +232,6 @@ export function AnalyticsDashboard() {
                       <div
                         className="h-2 rounded-full bg-[#1e3fec]"
                         style={{ width: `${(data.queries / maxQueries) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Response Time Trend */}
-        <div className="grid grid-cols-2 gap-6">
-          <Card className="bg-white">
-            <CardHeader className="bg-white">
-              <CardTitle>Response Time Trend</CardTitle>
-            </CardHeader>
-            <CardContent className="bg-white">
-              <div className="space-y-2">
-                {responseTimeData.map((data, index) => (
-                  <div key={index} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">{data.name}</span>
-                      <span className="text-gray-900">{data.time}s</span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-gray-100">
-                      <div
-                        className="h-2 rounded-full bg-[#75a6ff]"
-                        style={{ width: `${(data.time / maxTime) * 100}%` }}
                       />
                     </div>
                   </div>

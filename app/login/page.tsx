@@ -15,8 +15,8 @@ export default function LoginPage() {
     e.preventDefault()
     if (username === "admin" && password === "admin") {
       // Store login state in both localStorage and cookies
-      localStorage.setItem("isLoggedIn", "true")
       document.cookie = "isLoggedIn=true; path=/"
+      localStorage.setItem("isLoggedIn", "true")
       
       // Force a router refresh and navigation
       router.refresh()
@@ -24,6 +24,12 @@ export default function LoginPage() {
     } else {
       setError("Invalid credentials. Use admin/admin")
     }
+  }
+
+  const handleLogout = () => {
+    // Clear both cookie and localStorage
+    document.cookie = "isLoggedIn=false;path=/"
+    localStorage.removeItem("isLoggedIn")
   }
 
   return (
