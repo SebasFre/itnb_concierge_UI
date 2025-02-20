@@ -32,7 +32,7 @@ RUN npm install
 # Copy the rest of the application
 COPY . .
 
-FROM common as dev
+FROM common AS dev
 # Install development tools
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
@@ -44,7 +44,7 @@ RUN apt-get update \
 # Set development environment
 ENV NODE_ENV=development
 
-FROM common as prod
+FROM common AS prod
 # Set production environment
 ENV NODE_ENV=production
 
