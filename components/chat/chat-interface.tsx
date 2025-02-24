@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Send, ArrowDown, ArrowRight, Paperclip, Upload } from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { FileUpload } from "./file-upload"
+import { API_ENDPOINTS, fetchApi, ChatResponse, ChatHistoryItem, UploadFileResponse } from "@/app/config/api"
 
 interface Message {
   role: "user" | "assistant"
@@ -13,6 +14,8 @@ interface Message {
     name: string
     size: number
   }
+  sources?: string[]
+  confidence?: number
 }
 
 export function ChatInterface() {
@@ -20,13 +23,15 @@ export function ChatInterface() {
     {
       role: "assistant",
       content: "Hello! I'm ITNB's AI assistant. How can I help you today?",
-      timestamp: "15:58:12"
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     }
   ])
   const [input, setInput] = useState("")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadFileResponse[]>([])
   const [showUpload, setShowUpload] = useState(false)
   const [enterToSend, setEnterToSend] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false)
@@ -49,29 +54,89 @@ export function ChatInterface() {
     }
   }, [input])
 
-  const handleSend = () => {
-    if (!input.trim() && !selectedFile) return
+  // Convert messages to chat history format
+  const getHistoryFromMessages = (messages: Message[]): ChatHistoryItem[] => {
+    const history: ChatHistoryItem[] = []
     
-    const newMessage: Message = {
+    for (let i = 1; i < messages.length - 1; i += 2) {
+      const userMessage = messages[i]
+      const assistantMessage = messages[i + 1]
+      
+      if (userMessage?.role === 'user' && assistantMessage?.role === 'assistant') {
+        history.push({
+          question: userMessage.content,
+          chat_response: {
+            answer: assistantMessage.content,
+            confidence: assistantMessage.confidence || 0,
+            sources: assistantMessage.sources || [],
+            agent_name: null,
+            agent_uid: null
+          }
+        })
+      }
+    }
+    
+    return history
+  }
+
+  const handleSend = async () => {
+    if ((!input.trim() && !selectedFile) || isLoading) return
+    
+    const userMessage: Message = {
       role: "user",
       content: input.trim(),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     }
 
     if (selectedFile) {
-      newMessage.file = {
+      userMessage.file = {
         name: selectedFile.name,
         size: selectedFile.size
       }
     }
     
-    setMessages(prev => [...prev, newMessage])
+    setMessages(prev => [...prev, userMessage])
     setInput("")
     setSelectedFile(null)
     setShowUpload(false)
+    setIsLoading(true)
     
     if (textareaRef.current) {
       textareaRef.current.style.height = '40px'
+    }
+
+    try {
+      const response = await fetchApi(API_ENDPOINTS.query, {
+        method: 'POST',
+        body: JSON.stringify({
+          history: [],
+          minimum_confidence: 0,
+          question: userMessage.content,
+          uploaded_documents: []
+        })
+      })
+
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: response.answer,
+        confidence: response.confidence,
+        sources: response.sources,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      }
+
+      setMessages(prev => [...prev, assistantMessage])
+    } catch (error) {
+      console.error('Error sending message:', error)
+      const errorMessage: Message = {
+        role: "assistant",
+        content: error instanceof Error 
+          ? `Error: ${error.message}`
+          : "I apologize, but I encountered an error processing your request. Please try again.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
     }
   }
 
