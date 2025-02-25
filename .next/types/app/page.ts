@@ -1,4 +1,4 @@
-// File: /Users/sebas.frenck/itnb_client0_ui/app/page.tsx
+// File: /Users/sebas.frenck/Dropbox/ITNB/itnb products/UI/Cursor code/itnb UI concierge code/itnb_client0_ui2/app/page.tsx
 import * as entry from '../../../app/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
