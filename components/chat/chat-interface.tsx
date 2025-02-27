@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { Send, ArrowDown, ArrowRight, Paperclip, Upload } from "lucide-react"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Send, ArrowDown, ArrowRight, Paperclip, Upload, Trash2 } from "lucide-react"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { FileUpload } from "./file-upload"
 import { API_ENDPOINTS, fetchApi, ChatResponse, ChatHistoryItem, UploadFileResponse } from "@/app/config/api"
 
@@ -56,6 +56,30 @@ export function ChatInterface() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isDraggingGlobal, setIsDraggingGlobal] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  // Load messages from localStorage on initial render
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('chatMessages')
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages) as Message[]
+        if (parsedMessages.length > 0) {
+          setMessages(parsedMessages)
+        }
+      } catch (error) {
+        console.error('Error parsing saved messages:', error)
+      }
+    }
+    setIsInitialized(true)
+  }, [])
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (isInitialized && messages.length > 0) {
+      localStorage.setItem('chatMessages', JSON.stringify(messages))
+    }
+  }, [messages, isInitialized])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -200,6 +224,16 @@ export function ChatInterface() {
     setIsDraggingGlobal(false)
   }
 
+  // Add a function to clear chat history
+  const clearChatHistory = () => {
+    setMessages([{
+      role: "assistant",
+      content: "Hello! I'm ITNB's AI assistant. How can I help you today?",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }])
+    localStorage.removeItem('chatMessages')
+  }
+
   return (
     <Card 
       className="relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-[#1a1a1a]"
@@ -219,6 +253,18 @@ export function ChatInterface() {
           </div>
         </div>
       )}
+      
+      <CardHeader className="flex flex-row items-center justify-between py-2 px-4 border-b border-gray-200 dark:border-gray-800">
+        <h2 className="text-lg font-medium">Chat</h2>
+        <button
+          onClick={clearChatHistory}
+          className="flex items-center gap-1 rounded-lg px-2 py-1 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors"
+          title="Clear chat history"
+        >
+          <Trash2 className="h-4 w-4" />
+          <span className="text-sm">Clear chat</span>
+        </button>
+      </CardHeader>
       
       <CardContent className="flex-1 overflow-y-auto p-6 pb-36">
         <div className="space-y-4">

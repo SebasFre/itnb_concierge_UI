@@ -30,6 +30,8 @@ export default function Home() {
   const handleLogout = () => {
     // Clear both localStorage and cookies
     localStorage.removeItem("isLoggedIn")
+    // Clear chat messages
+    localStorage.removeItem("chatMessages")
     document.cookie = "isLoggedIn=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT"
     router.refresh()
     router.push("/login")
