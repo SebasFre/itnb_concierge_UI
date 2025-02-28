@@ -17,6 +17,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script 
+          src="https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs" 
+          type="module"
+        ></script>
+      </head>
       <body className={montserrat.className}>
         <ThemeProvider
           attribute="class"

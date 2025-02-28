@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import Image from "next/image"
 
 export default function LoginPage() {
   const [username, setUsername] = useState("")
@@ -37,12 +38,16 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-2">
           <div className="flex flex-col items-center">
-            <h1 className="font-montserrat font-bold text-3xl text-[#02133A] tracking-tight">
-              itnb ag
-            </h1>
-            <span className="font-montserrat text-sm italic text-[#FF7F50]">
-              Enterprise AI Platform
-            </span>
+            <div className="w-32 h-auto mb-2">
+              <Image 
+                src="/itnb_LOGO.png" 
+                alt="itnb ag logo" 
+                width={128} 
+                height={64}
+                priority
+              />
+            </div>
+           
           </div>
           <CardTitle className="text-2xl text-center">Login</CardTitle>
         </CardHeader>

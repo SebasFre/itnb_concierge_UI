@@ -29,33 +29,122 @@ export function SidebarProvider({
 
 export function Sidebar({ className, children }: React.HTMLAttributes<HTMLDivElement>) {
   const { expanded, setExpanded } = React.useContext(SidebarContext) || {}
+  const [isHovering, setIsHovering] = React.useState(false)
+  const [isInteracting, setIsInteracting] = React.useState(false)
+  const hoverTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
+  
+  // Function to check if the user is interacting with a dropdown menu
+  const isInteractingWithDropdown = React.useCallback(() => {
+    // Check if any dropdown menu is open
+    return !!document.querySelector('[data-state="open"]');
+  }, []);
+  
+  // Expand sidebar on hover and collapse when not hovering
+  React.useEffect(() => {
+    if ((isHovering || isInteracting || isInteractingWithDropdown()) && !expanded) {
+      setExpanded?.(true)
+      // Clear any existing timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+        hoverTimeoutRef.current = null
+      }
+    } else if (!isHovering && !isInteracting && !isInteractingWithDropdown() && expanded) {
+      // Add a longer delay before collapsing to prevent accidental collapses
+      // when the mouse briefly leaves the sidebar area or when interacting with dropdowns
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+      hoverTimeoutRef.current = setTimeout(() => {
+        // Double-check that we're still not interacting with a dropdown before collapsing
+        if (!isInteractingWithDropdown()) {
+          setExpanded?.(false)
+        }
+        hoverTimeoutRef.current = null
+      }, 300) // Reduced from 800ms to 300ms for quicker collapse
+    }
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+    }
+  }, [isHovering, isInteracting, expanded, setExpanded, isInteractingWithDropdown])
+  
+  // Add a global event listener to detect dropdown menu interactions
+  React.useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      // Check if the mouse is over a dropdown menu
+      const isOverDropdown = !!e.composedPath().find(el => 
+        el instanceof HTMLElement && 
+        (el.getAttribute('role') === 'menu' || el.hasAttribute('data-radix-dropdown-menu'))
+      );
+      
+      if (isOverDropdown && !isInteracting) {
+        setIsInteracting(true);
+      }
+    };
+    
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+    };
+  }, [isInteracting]);
   
   return (
-    <aside
-      className={cn(
-        "relative will-change-transform",
-        expanded ? "w-64" : "w-16",
-        "transition-[width] duration-200 ease-out",
-        className
-      )}
+    <div 
+      className="relative flex"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      onMouseDown={() => setIsInteracting(true)}
+      onMouseUp={() => {
+        // Add a small delay before setting isInteracting to false
+        // to ensure dropdown menus have time to open
+        setTimeout(() => setIsInteracting(false), 300)
+      }}
+      onClick={() => {
+        // Keep sidebar expanded when clicked
+        setIsInteracting(true)
+        // Reset after a delay to allow for dropdown interaction
+        setTimeout(() => setIsInteracting(false), 1000)
+      }}
     >
-      <button
-        onClick={() => setExpanded?.(!expanded)}
+      {/* Wider edge hover area - only visible when sidebar is collapsed */}
+      {!expanded && (
+        <div 
+          className="absolute left-0 top-0 w-8 h-full z-50 cursor-pointer"
+          onMouseEnter={() => setExpanded?.(true)}
+        />
+      )}
+      
+      <aside
         className={cn(
-          "absolute -right-3 top-3 z-50",
-          "flex h-6 w-6 items-center justify-center rounded-full",
-          "border border-[#1d34cc] bg-[#02133A] text-[#75a6ff]",
-          "hover:bg-[#1e3fec] transition-transform duration-200",
-          "will-change-transform shadow-sm",
-          expanded && "rotate-180"
+          "will-change-transform rounded-xl overflow-hidden",
+          expanded ? "w-64 opacity-100" : "w-0 opacity-0",
+          "transition-all duration-500 ease-out",
+          className
         )}
       >
-        <ChevronLeft className="h-4 w-4" />
+        <div className="h-full overflow-hidden relative z-10">
+          {children}
+        </div>
+      </aside>
+      <button
+        onClick={() => setExpanded?.(!expanded)}
+        onMouseEnter={() => !expanded && setExpanded?.(true)}
+        className={cn(
+          "absolute z-[100]",
+          "flex h-10 w-10 items-center justify-center rounded-full",
+          "border-2 border-gray-300 bg-white text-gray-600",
+          "dark:border-gray-600 dark:bg-[#02102e] dark:text-gray-300",
+          "hover:bg-gray-100 dark:hover:bg-[#041c4d] transition-all duration-500",
+          "will-change-transform shadow-lg",
+          expanded ? "left-60" : "left-2"
+        )}
+      >
+        <ChevronLeft className={cn("h-6 w-6 transition-transform duration-500", expanded ? "" : "rotate-180")} />
       </button>
-      <div className="h-full overflow-hidden relative z-10">
-        {children}
-      </div>
-    </aside>
+    </div>
   )
 }
 
@@ -73,7 +162,7 @@ export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTM
 }
 
 export function SidebarMenu({ className, ...props }: React.HTMLAttributes<HTMLUListElement>) {
-  return <ul className={cn("space-y-1", className)} {...props} />
+  return <ul className={cn("space-y-0.5", className)} {...props} />
 }
 
 export function SidebarMenuItem({ className, ...props }: React.HTMLAttributes<HTMLLIElement>) {
@@ -84,6 +173,43 @@ interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   isActive?: boolean
   icon?: React.ReactNode
   label?: string
+  labelClassName?: string
+  secondaryLabel?: string
+  secondaryLabelClassName?: string
+  children?: React.ReactNode
+}
+
+// AnimatedText component to handle letter-by-letter animation
+function AnimatedText({ text, expanded }: { text: string; expanded: boolean }) {
+  // Calculate a reasonable delay per character based on text length
+  // For longer text, we want faster animation to keep total time reasonable
+  const baseDelay = Math.max(20, Math.min(50, 500 / text.length));
+  
+  return (
+    <span className="flex overflow-hidden whitespace-nowrap">
+      {text.split('').map((char, index) => (
+        <span
+          key={index}
+          className={cn(
+            "transition-all will-change-transform",
+            expanded
+              ? "opacity-100 translate-y-0 max-w-[1em]"
+              : "opacity-0 translate-y-4 max-w-0",
+          )}
+          style={{
+            transitionDelay: expanded 
+              ? `${index * baseDelay}ms` 
+              : `${(text.length - index - 1) * baseDelay}ms`,
+            transitionDuration: "300ms",
+            transitionProperty: "opacity, transform, max-width",
+            transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
+    </span>
+  );
 }
 
 export function SidebarMenuButton({ 
@@ -91,6 +217,10 @@ export function SidebarMenuButton({
   isActive,
   icon,
   label,
+  labelClassName,
+  secondaryLabel,
+  secondaryLabelClassName,
+  children,
   ...props 
 }: SidebarMenuButtonProps) {
   const { expanded } = React.useContext(SidebarContext) || {}
@@ -99,8 +229,8 @@ export function SidebarMenuButton({
     <button
       className={cn(
         "flex w-full items-center gap-3 rounded-md transition-colors",
-        "px-3 py-2 text-white hover:bg-[#1e3fec]/10",
-        isActive && "bg-[#1e3fec]/20 text-white",
+        "px-3 py-2 text-gray-800 hover:bg-gray-400/50 dark:text-gray-100 dark:hover:bg-white/10",
+        isActive && "bg-gray-400 text-gray-900 font-semibold dark:bg-white/20 dark:text-white",
         !expanded && "justify-center px-2",
         "will-change-[width,padding]",
         className
@@ -108,15 +238,29 @@ export function SidebarMenuButton({
       {...props}
     >
       {icon}
-      <span 
+      <div 
         className={cn(
-          "text-base font-medium transition-[width,opacity] duration-200 ease-out",
-          "will-change-[width,opacity]",
-          expanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
+          "flex flex-col font-medium overflow-hidden w-full",
+          expanded 
+            ? "opacity-100 max-w-[200px] ml-0" 
+            : "opacity-0 max-w-0 ml-[-10px]",
+          "transition-all duration-500 ease-out"
         )}
       >
-        {label}
-      </span>
+        {label && (
+          <div className="flex justify-between items-center w-full">
+            <span className={labelClassName}>
+              <AnimatedText text={label} expanded={!!expanded} />
+            </span>
+            {secondaryLabel && expanded && (
+              <span className={cn("text-[10px] text-gray-500 dark:text-gray-400", secondaryLabelClassName)}>
+                {secondaryLabel}
+              </span>
+            )}
+          </div>
+        )}
+        {expanded && children}
+      </div>
     </button>
   )
 } 
