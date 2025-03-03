@@ -48,8 +48,9 @@ FROM common AS prod
 # Set production environment
 ENV NODE_ENV=production
 
-# Build the application
-RUN npm run build
+# Build the application with better error handling
+RUN echo "Starting build process..." && \
+    npm run build || (echo "Build failed with exit code $?" && exit 1)
 
 # Remove development dependencies
 RUN npm prune --production

@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set current time
-        uses: https://github.com/gerred/actions/current-time@master
+        uses: gerred/actions/current-time@master
         id: current_time
 
       - name: Set up Docker Buildx
@@ -69,3 +69,7 @@ jobs:
             type=registry,ref=${{ env.IMAGE }}:${{ github.ref_name }}
             type=registry,ref=${{ env.IMAGE }}:main
           cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max,image-manifest=true
+          # Add more debugging output
+          outputs: type=image,name=${{env.IMAGE}}
+          # Show detailed build output
+          progress: plain
