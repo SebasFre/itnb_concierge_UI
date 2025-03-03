@@ -19,7 +19,7 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
-  chatId: string | null;
+  chatId?: string | null;
 }
 
 // Loading indicator component
@@ -41,7 +41,7 @@ const LoadingIndicator = () => (
   </div>
 )
 
-export function ChatInterface({ chatId }: ChatInterfaceProps) {
+export function ChatInterface({ chatId = null }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
